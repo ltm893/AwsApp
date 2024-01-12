@@ -1,0 +1,35 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Cognito ApiGateway - NLB - EC2 ASG -- Rds Mysql
+Parameters : 
+  EnvironmentName:
+    Description: Environment name that is prefixed to resource names
+    Type: String
+    AllowedValues: [ ami, dev, prod ]   
+
+Resources:
+  DlivApiDomainName:
+    Type: 'AWS::ApiGatewayV2::DomainName'
+    Properties:
+      DomainName: !Sub ${EnvironmentName}.apps.dliv.com
+      DomainNameConfigurations:
+        - EndpointType: REGIONAL
+          CertificateArn: >-
+           arn:aws:acm:us-east-2:635054736638:certificate/6910396e-8f4e-4a65-9419-d5f1fe8ee39e
+
+  MyApiMapping:
+    Type: 'AWS::ApiGatewayV2::ApiMapping'
+    Properties:
+      DomainName: !Sub ${EnvironmentName}.apps.dliv.com
+      ApiId: !ImportValue BikesHttpApiExport
+      Stage: !ImportValue BikesApiStageExport
+
+  DlivcomDns:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: Z03527961312QGI34P9L5
+      Comment: Dynamic Dns for Bikes Api
+      Name: !Sub ${EnvironmentName}.apps.dliv.com
+      Type: A
+      AliasTarget:
+        HostedZoneId: !GetAtt  DlivApiDomainName.RegionalHostedZoneId
+        DNSName: !GetAtt  DlivApiDomainName.RegionalDomainName
