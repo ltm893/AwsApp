@@ -1,0 +1,15 @@
+[Unit]
+Description=Simple Nodejs Express server
+After=network.target
+
+[Service]
+Type=simple   
+ExecStart=/home/ec2-user/.nvm/versions/node/v18.19.0/bin/node /home/ec2-user/apps/bikes/simpleApp/server.js
+User=ec2-user
+Environment=ENV=production
+
+Restart=always
+RestartSec=1
+
+[Install]
+WantedBy=multi-user.target

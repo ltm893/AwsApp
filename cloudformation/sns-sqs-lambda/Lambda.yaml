@@ -1,0 +1,172 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Lambda
+
+Parameters:
+  ProjectName:
+    Type: String
+    Description: "Name of the project"
+    Default: "RdsNosqlSync"
+  TopicRegion:
+    Type: String
+    Default: us-east-2
+  DbName:
+    Type: String
+    Default: bikesdb
+
+Resources:
+  LambdaNosqlSyncRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: LambdaNosqlSyncRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+
+  LambdaNosqlSyncPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: LambdaNosqlSyncPolicy
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          [
+            {
+              "Effect": "Allow",
+              "Action":
+                [
+                  "sqs:ReceiveMessage",
+                  "sqs:DeleteMessage",
+                  "sqs:GetQueueAttributes",
+                  "logs:CreateLogGroup",
+                  "logs:CreateLogStream",
+                  "logs:PutLogEvents",
+                  "ec2:CreateNetworkInterface",
+                  "ec2:DescribeNetworkInterfaces",
+                  "ec2:DeleteNetworkInterface",
+                  "ec2:AssignPrivateIpAddresses",
+                  "ec2:UnassignPrivateIpAddresses"
+                ],
+              "Resource": "*",
+            },
+            {
+              "Action":
+                [
+                  "s3:GetObject"
+                ],
+              "Effect": "Allow",
+              "Resource": arn:aws:s3:::ltm893-lambda
+            }
+          ]
+      Roles:
+        - !Ref LambdaNosqlSyncRole
+
+  LambdaSecretPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: LambdaRdsSecretPolicy
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: "secretsmanager:GetSecretValue"
+            Resource: !ImportValue BikesDbSecretExport
+      Roles:
+        - !Ref LambdaNosqlSyncRole
+
+  NosqlSyncLamda:
+    Type: "AWS::Lambda::Function"
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    DependsOn: LambdaNosqlSyncPolicy
+    Properties:
+      FunctionName: NosqlSyncLamda
+      VpcConfig:
+        SecurityGroupIds: 
+          - !ImportValue RdsSecurityGroupExport
+          - !ImportValue Ec2IntanceSecurityGroupExport
+        SubnetIds: 
+          - !ImportValue RdsSubnet1
+          - !ImportValue RdsSubnet2
+      
+      Environment:
+        Variables:
+          USER_NAME: "{{resolve:secretsmanager:BikesDbSecret:SecretString:username}}"
+          PASSWORD: "{{resolve:secretsmanager:BikesDbSecret:SecretString:password}}"
+          DB_NAME:  !Ref DbName
+          RDS_HOST: !ImportValue RdsMysqlDbExport
+          
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt LambdaNosqlSyncRole.Arn
+      Code:
+        S3Bucket: ltm893-lambdas
+        S3Key: lambda_function.zip
+      Runtime: python3.9
+      Timeout: 300
+
+  LambdaSqsMapping:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      EventSourceArn: !ImportValue LambdaSyncQueueArn
+      FunctionName: !Ref NosqlSyncLamda
+      Enabled: true
+      
+  DocDbSubnetGroup:
+    Type: AWS::DocDB::DBSubnetGroup
+    Properties: 
+      DBSubnetGroupDescription: Subnet has RDS and DocDb
+      DBSubnetGroupName: DBSubnet
+      SubnetIds: 
+        - !ImportValue RdsSubnet1
+        - !ImportValue RdsSubnet2     
+  
+  DocDbInstance:
+    Type: AWS::DocDB::DBInstance
+    Properties: 
+      # AutoMinorVersionUpgrade: Boolean
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      # DBClusterIdentifier: String
+      DBInstanceClass: db.t4g.medium
+      # DBInstanceIdentifier: String
+      # EnablePerformanceInsights: Boolean
+      # PreferredMaintenanceWindow: String
+  
+  DocDbCluster:
+    Type: AWS::DocDB::DBCluster
+    Properties: 
+      AvailabilityZones: 
+        -  !Select [0, !GetAZs ""]
+        -  !Select [1, !GetAZs ""]
+      # BackupRetentionPeriod: Integer
+      # CopyTagsToSnapshot: Boolean
+      DBClusterIdentifier: String
+      DBClusterParameterGroupName: String
+      DBSubnetGroupName: String
+      DeletionProtection: Boolean
+      EnableCloudwatchLogsExports: 
+        - String
+      EngineVersion: String
+      KmsKeyId: String
+      MasterUsername: String
+      MasterUserPassword: String
+      Port: Integer
+      PreferredBackupWindow: String
+      PreferredMaintenanceWindow: String
+      RestoreToTime: String
+      RestoreType: String
+      SnapshotIdentifier: String
+      SourceDBClusterIdentifier: String
+      StorageEncrypted: Boolean
+      Tags: 
+        - Tag
+      UseLatestRestorableTime: Boolean
+      VpcSecurityGroupIds: 
+        - String
+
+

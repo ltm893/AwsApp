@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    
+      
+</head>
+<body>
+     <button id="getAppsBtn">Check</button>
+     <div id="displayApps"></div>
+</body>
+</html>
+<script>
+    let  token, tokenType, expires ; 
+    const authHost = 'https://dliv.auth.us-east-2.amazoncognito.com/oauth2/token' ; 
+    const authCodeHost = 'https://dliv.auth.us-east-2.amazoncognito.com/oauth2/authorize?' ;
+    const clientId = '3ork0akde8cp2ls81caq9i8lrv' ; 
+    const RedirectUrl = 'http://localhost:3000' ; 
+
+    const checkIncoming = () => {
+        const host = window.location.host;
+        const pathname = window.location.pathname;
+        const search = window.location.search;
+        const hash = window.location.hash;
+        console.log("Token", token)
+        console.log("expires ", expires)
+        console.log("host", host)
+        console.log("path", pathname )
+        console.log("search", search)
+        console.log("hash", hash)
+
+        
+        const urlParams = new URLSearchParams(search);
+        const authCode = urlParams.get('code') ; 
+        if(authCode) {
+            console.log("authcode", authCode)
+            getOAuthToken(authCode)
+        }
+        
+    }
+
+    window.onload = checkIncoming  ; 
+
+
+    const redirectForAuthCode = () => {
+        const authCodeUrl = authCodeHost + new URLSearchParams({
+            response_type: 'code',
+            client_id: clientId,
+            redirect_uri: RedirectUrl,
+            scope: "email" 
+            }) ;
+            window.location.href = authCodeUrl ; 
+    
+    }
+
+    const getOAuthToken =  (authCode) => {
+        // const currentUrl = window.location.href;
+        // console.log(currentUrl);
+        // window.location.href = authCodeUrl ;
+        // const queryString = window.location.search;
+        // console.log(queryString);
+        // const urlParams = new URLSearchParams(queryString);
+        // const authCode = urlParams.get('code')
+        // console.log(authCode);
+        if(authCode) {
+            fetch(authHost , {
+            method: 'POST',  
+            body: 'grant_type=authorization_code&code=' + authCode + '&client_id=' + clientId + '&redirect_uri=' + RedirectUrl ,
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+            }).then(function (resp) {
+                // Return the response as JSON
+                return resp.json();
+            }).then(function (data) { 
+                // const params = window.location.search;
+                // params.delete("code")
+                window.location.pathname = '' ; 
+                token = data.access_token;
+                tokenType = data.token_type;
+                expires = new Date().getTime() + (data.expires_in * 1000);
+                console.log(token);
+                
+                return fetch('https://apps.dliv.com', {
+                    mode: 'cors' , 
+                    headers: {
+                        'Authorization': data.token_type + ' ' + data.access_token,
+                        'Content-Type': 'application/x-www-form-urlencoded'
+		            }   
+                })
+                
+            }).then(function (resp) {
+                return resp.json();
+            }).then(function (data) {
+                console.log('pets', data);
+            }).catch(function (err) {
+                // Log any errors
+                console.log('something went wrong rrr', err);
+            });
+        }
+        else {
+            alter("No authorization code")
+        }
+    }
+
+
+    const getDlivApps = () => {
+        console.log("Fetching Dliv")
+        console.log(token)
+        console.log(tokenType)
+        fetch('https://apps.dliv.com', {
+            mode: "no-cors",
+            headers: {
+                'Authorization': tokenType + ' ' + token,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+           
+        }).then(function (resp) {
+            // Return the API response as JSON
+            console.log(resp)
+            return resp.json();
+        }).then(function (data) {
+            // Log the pet data
+            console.log('from apps', data);
+        }).catch(function (err) {
+           console.log('something went wrong callinbg apps ', err);
+        });
+
+}
+
+
+    const makeCall = function () {
+        // If current token is invalid, get a new one
+        if (!expires || expires - new Date().getTime() < 1) {
+            console.log('new call');
+            redirectForAuthCode() ; 
+        }
+        // Otherwise, get pets
+        console.log('from cache');
+        getDlivApps()
+    }
+
+    
+    const appsBtnElement = document.getElementById("getAppsBtn");
+    appsBtnElement.addEventListener("click",redirectForAuthCode);
+
+    const displayApp = document.getElementById("displayApps");
+ 
+   
+    
+    </script>

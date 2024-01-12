@@ -1,0 +1,240 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Cognito ApiGateway - NLB - EC2 ASG -- Rds Mysql
+Parameters : 
+  AmiId:
+    Type: AWS::SSM::Parameter::Value<String>
+  EnvironmentName:
+    Description: Environment name that is prefixed to resource names
+    Type: String
+    AllowedValues: [ ami, dev, prod ]   
+
+Resources:
+  NodejsTargeGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckEnabled: True
+      HealthCheckIntervalSeconds: 10
+      HealthCheckTimeoutSeconds: 10
+      HealthyThresholdCount: 2
+      Name: !Sub ${EnvironmentName}-BikeAppTargetGroup
+      Protocol: TCP
+      Port: 8080
+      UnhealthyThresholdCount: 2
+      VpcId: !ImportValue TwoPubPrivVpcId
+
+  NetworkElasticLoadBalancer:
+    Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+    Properties:
+      Name: BikesNlb
+      Type: network
+      Scheme: internal
+      Subnets: 
+        - !ImportValue RdsSubnet1
+        - !ImportValue RdsSubnet2
+      SecurityGroups: 
+        - !ImportValue Ec2InstanceSecurityGroupExport
+
+  NlbListener:
+   Type: 'AWS::ElasticLoadBalancingV2::Listener'
+   Properties:
+     DefaultActions:
+       - Type: forward
+         TargetGroupArn: !Ref NodejsTargeGroup
+     LoadBalancerArn: !Ref NetworkElasticLoadBalancer
+     Port: 8080
+     Protocol: TCP
+
+  NodejsAutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties: 
+      AutoScalingGroupName: !Sub ${EnvironmentName}-BikesNodejsAG
+      DesiredCapacity: "2"
+      HealthCheckGracePeriod: 5
+      HealthCheckType: ELB
+      MaxSize: "4"
+      MinSize: "2"
+      TargetGroupARNs: 
+        - !Ref NodejsTargeGroup
+      VPCZoneIdentifier: 
+        - !ImportValue RdsSubnet1
+        - !ImportValue RdsSubnet2
+      LaunchTemplate:
+        LaunchTemplateId: !Ref NodejsLaunchTemplate
+        Version: !GetAtt NodejsLaunchTemplate.LatestVersionNumber
+
+  NodejsLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: !Sub ${AWS::StackName}-launch-template
+      LaunchTemplateData:
+        IamInstanceProfile:
+          Arn: !ImportValue  Nodejs4MysqlInstanceProfileArnExport
+        ImageId:  !Ref AmiId
+        InstanceType:  t3.micro
+        SecurityGroupIds: 
+        - !ImportValue  Ec2InstanceSecurityGroupExport
+        TagSpecifications:
+          - ResourceType: instance
+            Tags:
+            - Key: ENVHOST
+              Value: !Sub ${EnvironmentName}
+        UserData: IyEvYmluL2Jhc2gKL2hvbWUvZWMyLXVzZXIvc2NyaXB0cy9zdGFydEFwcAo=
+
+  BikesHttpApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      CorsConfiguration: 
+        AllowCredentials: true
+        AllowHeaders: 
+          - Authorization
+          - Content-Type
+          - Content-Length
+          - X-Requested-With
+        AllowMethods: 
+          - GET
+          - POST
+          - OPTIONS
+        AllowOrigins: 
+          - http://localhost:3000
+          - https://www.dliv.com
+        MaxAge: 300
+      Name: !Sub ${EnvironmentName}-BikesApiCF
+      Description: BikesApis
+      ProtocolType: HTTP
+      
+      
+  BikesApiStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties: 
+      AutoDeploy: true
+      AccessLogSettings:
+        DestinationArn: !GetAtt ApiDlivLogGroup.Arn 
+        Format: '{ "requestId": "$context.requestId", 
+                  "path": "$context.path", 
+                  "routeKey": "$context.routeKey", 
+                  "ip": "$context.identity.sourceIp", 
+                  "requestTime": "$context.requestTime", 
+                  "httpMethod": "$context.httpMethod",
+                  "statusCode": $context.status }'
+
+      ApiId: !Ref BikesHttpApi
+      StageName: Staging
+         
+  
+  BikesApiVpclink:
+    Type: AWS::ApiGatewayV2::VpcLink
+    Properties:
+      Name: BikesApiVpclink
+      SecurityGroupIds: 
+        - !ImportValue  Ec2InstanceSecurityGroupExport
+      SubnetIds: 
+        - !ImportValue RdsSubnet1
+        - !ImportValue RdsSubnet2
+
+  BikeApiIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties: 
+      ApiId: !Ref BikesHttpApi
+      ConnectionType: VPC_LINK
+      ConnectionId: !Ref BikesApiVpclink
+      IntegrationMethod: GET
+      IntegrationType: HTTP_PROXY
+      IntegrationUri: !Ref  NlbListener
+      PayloadFormatVersion: 1.0
+      
+  
+  BikeApiRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties: 
+      ApiId: !Ref BikesHttpApi
+      AuthorizationType: JWT
+      AuthorizerId: !Ref HttpApiAuthorizer
+      RouteKey: 'GET /{proxy+}'
+      Target: !Sub "integrations/${BikeApiIntegration}"
+
+  BikeApiOptionsRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties: 
+      ApiId: !Ref BikesHttpApi
+      RouteKey: 'OPTIONS /{proxy+}'
+      Target: !Sub "integrations/${BikeApiIntegration}"
+
+  BikeApiDefaultRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties: 
+      ApiId: !Ref BikesHttpApi
+      AuthorizationType: JWT
+      AuthorizerId: !Ref HttpApiAuthorizer
+      RouteKey: '$default'
+      Target: !Sub "integrations/${BikeApiIntegration}"
+
+  HttpApiAuthorizer:
+    Type: AWS::ApiGatewayV2::Authorizer
+    Properties:
+      ApiId: !Ref BikesHttpApi
+      AuthorizerType: JWT
+      IdentitySource:
+        - "$request.header.Authorization"
+      JwtConfiguration:
+        Audience:
+          - !Ref UserPoolClient
+        Issuer: !Sub "https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}"
+      Name: JwtAuthorizer
+
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      AutoVerifiedAttributes:
+        - email
+      UsernameAttributes:
+        - email
+      UserPoolName: !Sub ${EnvironmentName}-bikes-apigateway
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthFlows: 
+        - code
+      AllowedOAuthScopes: 
+        - email
+        - openid
+      CallbackURLs:
+        - https://apps.dliv.com
+        - http://localhost:3000
+        - https://www.dliv.com
+      ClientName: !Sub ${EnvironmentName}-bikes-apigateway
+      DefaultRedirectURI: http://localhost:3000
+      SupportedIdentityProviders:
+        - COGNITO
+      UserPoolId: !Ref UserPool
+      
+
+  UserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties: 
+      Domain: !Sub ${EnvironmentName}-dliv
+      UserPoolId: !Ref UserPool
+
+
+  ApiDlivLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties: 
+      LogGroupName: !Sub ${EnvironmentName}-ApiDlivApps
+      RetentionInDays: 7
+
+Outputs:
+  BikesHttpApiOutput:
+    Description: Reference to  Bike Http Api
+    Value: !Ref BikesHttpApi
+    Export:
+      Name: BikesHttpApiExport
+
+  BikesApiStage:
+    Description: Reference to BikesApiStage
+    Value: !Ref BikesApiStage
+    Export:
+      Name: BikesApiStageExport
+      
+
+    

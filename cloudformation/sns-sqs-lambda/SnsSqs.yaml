@@ -1,0 +1,67 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: SNS-SQS
+
+Parameters:
+  ProjectName:
+    Type: String
+    Description: "Name of the project"
+    Default: "RdsNosqlSync"
+  TopicRegion:
+    Type: String
+    Default: us-east-2
+
+Resources:
+  SnsSyncTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "${ProjectName}"
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}"
+
+  SyncTopicSubscription:
+    Type: AWS::SNS::Subscription
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Properties:
+      Endpoint: !GetAtt SqsSyncQueue.Arn
+      Protocol: sqs
+      TopicArn: !Ref SnsSyncTopic
+      Region: !Ref TopicRegion
+
+  SqsSyncQueue:
+    Type: AWS::SQS::Queue
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Properties:
+      VisibilityTimeout: 310
+      QueueName: !Sub "${ProjectName}"
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}"
+
+  QueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Id: QueuePolicyId
+        Statement:
+        - Sid: Allow-SNS-SendMessage
+          Effect: Allow
+          Principal: 
+            Service: sns.amazonaws.com
+          Action: sqs:SendMessage
+          Resource: !GetAtt SqsSyncQueue.Arn
+          Condition:
+            ArnEquals: 
+              aws:SourceArn: !Ref SnsSyncTopic
+      Queues:
+        - !Ref SqsSyncQueue
+
+Outputs:
+  SQS:
+    Description: For Lambda Import
+    Value: !GetAtt SqsSyncQueue.Arn
+    Export:
+      Name: LambdaSyncQueueArn

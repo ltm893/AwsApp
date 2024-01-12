@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bikes</title>
+    <style>
+        .card {
+  /* Add shadows to create the "card" effect */
+  box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+  transition: 0.3s;
+}
+
+/* On mouse-over, add a deeper shadow */
+.card:hover {
+  box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2);
+}
+
+/* Add some padding inside the card container */
+.container {
+  padding: 2px 16px;
+}
+
+
+.wrapper {
+    background-color: whitesmoke;
+    list-style-type: none;
+    padding: 0;
+    border-radius: 3px;
+  }
+  .form-row {
+    display: flex;
+    justify-content: flex-end;
+    }
+  .form-row > label {
+    flex: 1;
+  }
+  
+  .form-row > input {
+    flex: 2;
+  }
+  .form-row > input,
+
+ 
+    </style>
+</head>
+
+<body onload="getBikeTableDetails()">
+    <h1>Bikes</h1>
+    <div id="bike_search" >
+        <div>
+            <label for="bikeTable">Select a table:</label>
+            <select name="bikeTableSelector" id="bikeTableSelectorId"></select>
+        </div>
+    </div>
+    <div id="queryContainer" class="card" >  
+        <h2>Query</h2>  
+        <div id="queryTypeSelectorId">
+            Select query type 
+            <input type="radio" id="queryTypeFilteredId" name="queryType" value="filtered">
+            <label for="html">Filtered</label>
+            <input type="radio" id="queryTypeAllId" name="queryType" value="all">
+            <label for="html">Select All</label>
+        </div>
+        <div id="querySelectorFiltered" >
+            <label for="bikeFilterSelectorId">Select a filter attribute:</label>
+            <select name="bikeFilterSelector" id="bikeFilterSelectorId"></select>
+            =
+            <input type="text" id="bikeFilterValue" />
+        </div>
+        <div>
+            <button id="bike_search_button">Search</button>
+        </div>
+        <div>
+            <div id="displayData"> </div>
+        </div>
+    </div>
+    <div id="insertContainer" class="card" >  
+        <h2>Insert</h2>
+        <div id='insertObjectId'></div>
+    </div>
+    </body>
+</body>
+
+</html>
+<script src="js/main.js"></script>

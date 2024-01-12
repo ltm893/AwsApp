@@ -1,0 +1,49 @@
+#!/bin/bash
+set -eo pipefail
+
+<<com
+jq -c '.stack[]' stackConfig.json | while read i; do
+   echo "$i.env"
+ done
+
+| map(select(.EnvironmentName == "AMI"))
+
+.[] | select(.KVs[] | .Key == "animal" and .Value == "lion")
+
+readarray -t projects < <( jq -c '.[] | select(.env) | .env | map(select(.EnvironmentName == "AMI" ))' stackConfig.json )
+ for i in "${projects[@]}"; do
+    echo $i['EnvironmentName']
+ done
+
+ --arg prefix "ParameterKey="
+
+envt=AMI \
+jq -r  ' .[] | select(.env) | .env | map(select(.EnvironmentName == env.envt ))[]  '  \
+stackConfig.json
+
+com
+
+
+
+aws rds  describe-db-instances --profile todd | jq '.DBInstances[] | select(.DBName | startswith("ami")) | .Endpoint.Address
+
+ aws  cognito-idp list-user-pools --max-results 5 --profile todd | jq '.UserPools[] | select(.Name=="ami-bikes-apigateway") |.Id'
+
+
+ aws cognito-idp list-user-pool-clients  --user-pool-id=us-east-2_rs8QC7V8B --profile todd
+{
+    "UserPoolClients": [
+        {
+            "ClientId": "77eqq3m9gkiqikuo5q3qkuepf4",
+            "UserPoolId": "us-east-2_rs8QC7V8B",
+            "ClientName": "ami-bikes-apigateway"
+        }
+    ]
+}
+
+
+
+
+
+
+

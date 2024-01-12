@@ -1,0 +1,173 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Instance Profile and Roles for Image Builder and Nodejs API server
+Parameters:
+  ImageId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+  EnvironmentName:
+    Description: Environment name that is prefixed to resource names
+    Type: String
+    AllowedValues: [ ami, dev, prd ] 
+
+Resources:
+  Nodejs4MysqlInstanceProfile: 
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: !Sub ${EnvironmentName}-nodejs-mysql-instance-profile
+      Path: /
+      Roles:
+        - Ref: Nodejs4MysqlInstanceRole
+
+  Nodejs4MysqlInstanceRole:
+    Type: "AWS::IAM::Role"
+    Properties: 
+      RoleName: !Sub ${EnvironmentName}-Nodejs4MysqlInstanceRole
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+          - Effect: "Allow"
+            Principal: 
+              Service: 
+                - "ec2.amazonaws.com"
+            Action: 
+              - "sts:AssumeRole"
+      Path: "/"
+      Policies:
+        - PolicyName: !Sub ${EnvironmentName}-SSMManagedInstanceCore
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow
+              Action:
+              - ssm:DescribeAssociation
+              - ssm:GetDeployablePatchSnapshotForInstance
+              - ssm:GetDocument
+              - ssm:DescribeDocument
+              - ssm:GetManifest
+              - ssm:GetParameter
+              - ssm:GetParameters
+              - ssm:ListAssociations
+              - ssm:ListInstanceAssociations
+              - ssm:PutInventory
+              - ssm:PutComplianceItems
+              - ssm:PutConfigurePackageResult
+              - ssm:UpdateAssociationStatus
+              - ssm:UpdateInstanceAssociationStatus
+              - ssm:UpdateInstanceInformation
+              Resource: "*"
+            - Effect: Allow
+              Action:
+              - ssmmessages:CreateControlChannel
+              - ssmmessages:CreateDataChannel
+              - ssmmessages:OpenControlChannel
+              - ssmmessages:OpenDataChannel
+              Resource: "*"
+            - Effect: Allow
+              Action:
+              - ec2messages:AcknowledgeMessage
+              - ec2messages:DeleteMessage
+              - ec2messages:FailMessage
+              - ec2messages:GetEndpoint
+              - ec2messages:GetMessages
+              - ec2messages:SendReply
+              Resource: "*"  
+        - PolicyName: !Sub ${EnvironmentName}-EC2InstanceProfileForImageBuilder
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow
+              Action:
+              - imagebuilder:GetComponent
+              Resource: "*"
+            - Effect: Allow
+              Action:
+              - kms:Decrypt
+              Resource: "*"
+              Condition:
+                ForAnyValue:StringEquals:
+                  kms:EncryptionContextKeys: aws:imagebuilder:arn
+                  aws:CalledVia:
+                  - imagebuilder.amazonaws.com
+            - Effect: Allow
+              Action:
+              - s3:GetObject
+              Resource: arn:aws:s3:::ec2imagebuilder*
+            - Effect: Allow
+              Action:
+              - logs:CreateLogStream
+              - logs:CreateLogGroup
+              - logs:PutLogEvents
+              Resource: arn:aws:logs:*:*:log-group:/aws/imagebuilder/*
+
+  NodejsInstanceS3Policy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub ${EnvironmentName}-Ec2MyqlS3Policy
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - s3:*
+            Resource:
+              - arn:aws:s3:::ltm893-mysql-bike-loads/*
+              - arn:aws:s3:::ltm893-mysql-bike-loads
+              - arn:aws:s3:::dlivcom-bikes-api-code/*
+              - arn:aws:s3:::dlivcom-bikes-api-code
+              - arn:aws:s3:::dlivcom-bikes-api-code/opt/*
+              - arn:aws:s3:::dlivcom-bikes-api-code/opt
+              - arn:aws:s3:::dlivcom-bikes-api-code/service/*
+              - arn:aws:s3:::dlivcom-bikes-api-code/service
+              - arn:aws:s3:::dlivcom-bikes-api-code/scripts/*
+              - arn:aws:s3:::dlivcom-bikes-api-code/scripts
+      Roles:
+        - Ref: Nodejs4MysqlInstanceRole
+        - EC2InstanceProfileForImageBuilder 
+
+  NodejsInstanceDescribePolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub ${EnvironmentName}-Ec2DescribeS3Policy
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: EC2Describe
+          Effect: Allow
+          Action: ec2:Describe*
+          Resource: "*"
+      Roles:
+      - Ref: Nodejs4MysqlInstanceRole
+
+Outputs:
+  Role:
+    Description: A reference to Role
+    Value: !Ref Nodejs4MysqlInstanceRole
+    Export:
+      Name: Nodejs4MysqlInstanceRoleExport
+
+  Profile:
+    Description: A reference to Profile
+    Value: !Ref Nodejs4MysqlInstanceProfile
+    Export:
+      Name: Nodejs4MysqlInstanceProfileExport
+
+  ProfileArn:
+    Description: A reference to Profile Arn
+    Value: !GetAtt Nodejs4MysqlInstanceProfile.Arn
+    Export:
+      Name: Nodejs4MysqlInstanceProfileArnExport
+
+  
+
+
+
+
+
+
+
+  
+        
+
+
+
+      

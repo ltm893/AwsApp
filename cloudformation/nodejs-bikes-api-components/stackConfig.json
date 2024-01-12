@@ -1,0 +1,68 @@
+   [
+        {
+            "name":"InstanceProfile",
+            "template":"file://InstProfile.yaml",
+            "iamcapabilities":"CAPABILITY_NAMED_IAM"
+        },
+        {
+            "name":"Network",
+            "template":"file://TwoPubPrivNetwork.yaml",
+            
+            "env":[
+                {
+                    "EnvironmentName" : "ami",
+                    "VpcCIDR" : "10.192.0.0/16" ,
+                    "PublicSubnet1CIDR" : "10.192.10.0/24",
+                    "PublicSubnet2CIDR" : "10.192.11.0/24",
+                    "PrivateSubnet1CIDR" : "10.192.20.0/24",
+                    "PrivateSubnet2CIDR" : "10.192.21.0/24"
+                },
+                {
+                    "EnvironmentName" : "dev",
+                    "VpcCIDR" : "10.92.0.0/16" ,
+                    "PublicSubnet1CIDR" : "10.92.10.0/24",
+                    "PublicSubnet2CIDR" : "10.92.11.0/24",
+                    "PrivateSubnet1CIDR" : "10.92.20.0/24",
+                    "PrivateSubnet2CIDR" : "10.92.21.0/24"
+                },
+                {
+                    "EnvironmentName" : "prod",
+                    "VpcCIDR" : "10.2.0.0/16" ,
+                    "PublicSubnet1CIDR" : "10.2.10.0/24",
+                    "PublicSubnet2CIDR" : "10.2.11.0/24",
+                    "PrivateSubnet1CIDR" : "10.2.20.0/24",
+                    "PrivateSubnet2CIDR" : "10.2.21.0/24"
+                }
+            ]
+        },
+        {
+            "name":"SecurityGroups",
+            "template":"file://SecurityGroups.yaml"
+        },
+        {
+            "name":"ImageBuilder",
+            "template":"file://ImageBuilder.yaml"
+        },
+        {
+            "name":"Components",
+            "template":"file://Components.yaml"
+        },
+        {
+            "name":"Mysql",
+            "template":"file://Mysql.yaml",
+            "iamcapabilities":"CAPABILITY_NAMED_IAM"
+        },
+        {
+            "name":"Dns",
+            "template":"file://Dns.yaml"
+        }
+       
+    ]      
+
+
+
+
+
+
+
+

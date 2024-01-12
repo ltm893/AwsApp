@@ -1,0 +1,288 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Ec2 Image Builder Pipeline for Nodejs API server
+Parameters:
+  InstanceType:
+    Description: Instance type to launch EC2 instances.
+    Type: String
+    Default: t3.micro
+    AllowedValues: [  t3.micro, t3.t3.small , t3.medium ]
+  ImageId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-x86_64
+
+Resources:
+  BikesApiPipeline:
+    Type: AWS::ImageBuilder::ImagePipeline
+    DependsOn:
+      - NodejsApiRecipe
+      - NodejsApiInfConfig
+    Properties:
+      Description: Builds an AMI for nodejs bikes API server
+      ExecutionRole: arn:aws:iam::635054736638:role/aws-service-role/imagebuilder.amazonaws.com/AWSServiceRoleForImageBuilder
+      ImageRecipeArn: !GetAtt NodejsApiRecipe.Arn
+      InfrastructureConfigurationArn: !GetAtt NodejsApiInfConfig.Arn
+      Name: BikesApiImageBuilder
+
+  NodejsApiInfConfig:
+    Type: 'AWS::ImageBuilder::InfrastructureConfiguration'
+    Properties:
+      Name: nodejsAp infrastructure configuration
+      InstanceProfileName: !ImportValue Nodejs4MysqlInstanceProfileExport
+      Description: describing
+      InstanceTypes: 
+        - !Ref InstanceType
+      SecurityGroupIds:
+        - !ImportValue  Ec2InstanceSecurityGroupExport
+      SubnetId: !ImportValue RdsSubnet1
+
+
+  NodejsApiRecipe:
+    Type: AWS::ImageBuilder::ImageRecipe
+    DependsOn:
+         - InstallNodejsApiComponent
+         - InstallSimpleAppApiComponent
+    Properties:
+      Components: 
+        - ComponentArn: !GetAtt InstallNodejsApiComponent.Arn
+        - ComponentArn: !GetAtt InstallSimpleAppApiComponent.Arn
+      Description: NodejsApiRecipe
+      Name: NodejsApiRecipe23
+      ParentImage: !Ref ImageId
+      Version: 1.0.1
+
+  InstallSimpleAppApiComponent:
+    DependsOn:
+         - InstallNodejsApiComponent
+    Type: AWS::ImageBuilder::Component
+    Properties:
+      Name:  InstallSimpleAppApiComponent
+      Platform: Linux
+      Version: '1.0.1'
+      Description: Installs nodejs express simpleApp
+      ChangeDescription: initial load
+      SupportedOsVersions: 
+        - 'Amazon Linux 2023'
+      Data: |
+        name: NodejsBikesApi
+        description: Inline Data for nodejs API image build
+        schemaVersion: 1.0
+
+        phases:
+          - name: build
+            steps:
+              - name: DownloadS3OptFiles
+                action: S3Download
+                onFailure: Abort
+                inputs:
+                  - source: s3://dlivcom-bikes-api-code/opt/*
+                    destination: /opt/finishbuild
+                    overwrite: true
+              
+              - name: DownloadRemoteFile
+                action: WebDownload
+                maxAttempts: 3
+                inputs:
+                - source: https://awstoe-us-east-2.s3.us-east-2.amazonaws.com/latest/linux/386/awstoe
+                  destination: /opt/finishbuild/awstoe
+
+              - name: ModifyFinishPermissions
+                action: SetFolderPermissions
+                inputs:
+                  - path: /opt/finishbuild/
+                    permissions: 755
+                    recursive: true
+
+              - name: UnzipSimpleApp
+                action: ExecuteBash
+                onFailure: Abort
+                inputs:
+                  commands:
+                    - unzip /opt/finishbuild/simpleApp.zip -d /home/ec2-user/apps/bikes
+
+              - name: SettingFolderPropertyEc2userApps
+                action: SetFolderOwner
+                onFailure: Abort
+                inputs:
+                - path: /home/ec2-user/apps
+                  owner: ec2-user
+              
+              - name: DownloadSimpleAppService
+                action: S3Download
+                onFailure: Abort
+                inputs:
+                  - source: s3://dlivcom-bikes-api-code/service/simpleApp.service
+                    destination: /etc/systemd/system/simpleApp.service
+                    overwrite: true
+
+              - name: ModifyingSimpleAppServicePermissions
+                action: SetFilePermissions
+                inputs:
+                  - path: /etc/systemd/system/simpleApp.service
+                    permissions: 755
+
+              - name: SettingSimpleAppServiceFilePerms
+                action: SetFileOwner
+                onFailure: Abort
+                inputs:
+                - path: /etc/systemd/system/simpleApp.service
+                  owner: ec2-user
+
+              - name: DownloadScripts
+                action: S3Download
+                onFailure: Abort
+                inputs:
+                  - source: s3://dlivcom-bikes-api-code/scripts/*
+                    destination: /home/ec2-user/scripts/
+                    overwrite: true
+
+              - name: SettingFolderPropertyImportData
+                action: SetFolderOwner
+                onFailure: Abort
+                inputs:
+                - path: /home/ec2-user/scripts/
+                  owner: ec2-user
+              
+              - name: ModifyingImportDataPermissions
+                action: SetFolderPermissions
+                inputs:
+                  - path: /home/ec2-user/scripts/
+                    permissions: 755
+
+              
+                    
+          - name: validate
+            steps: 
+              - name: ListAwstoe    
+                action: ExecuteBash
+                onFailure: Abort
+                inputs:
+                  commands:
+                    - ls -ltr  /opt/finishbuild/awstoe
+
+              - name: ListAppDir 
+                action: ExecuteBash
+                onFailure: Abort
+                inputs:
+                  commands:
+                    - ls -ltr  /home/ec2-user/apps/bikes/simpleApp
+
+              - name: ListImportData     
+                action: ExecuteBash
+                onFailure: Abort
+                inputs:
+                  commands:
+                    - ls -ltr  /home/ec2-user/scripts/importData.sh
+
+              - name: ListStartApp    
+                action: ExecuteBash
+                onFailure: Abort
+                inputs:
+                  commands:
+                    - ls -ltr  /home/ec2-user/scripts/startApp
+
+              - name: StartSimpleApp
+                action: ExecuteBash
+                onFailure: Abort
+                inputs:
+                  commands:
+                    - /bin/su -c  "sudo systemctl start simpleApp.service" - ec2-user
+                        
+          - name: test
+            steps:
+              - name: ListAwstoe
+                action: ExecuteBash
+                onFailure: Abort
+                inputs:
+                  commands:
+                    - ls -ltr /opt/finishbuild/awstoe
+
+              - name: LisAppDir     
+                action: ExecuteBash
+                onFailure: Abort
+                inputs:
+                  commands:
+                    - ls -ltr   /home/ec2-user/apps/bikes/simpleApp    
+
+              - name: ListImportData     
+                action: ExecuteBash
+                onFailure: Abort
+                inputs:
+                  commands:
+                    - ls -ltr  /home/ec2-user/scripts/importData.sh
+
+              - name: ListStartApp    
+                action: ExecuteBash
+                onFailure: Abort
+                inputs:
+                  commands:
+                    - ls -ltr  /home/ec2-user/scripts/startApp
+
+              - name: StartSimpleApp
+                action: ExecuteBash
+                onFailure: Abort
+                inputs:
+                  commands:
+                    - /bin/su -c  "sudo systemctl start simpleApp.service" - ec2-user
+
+  InstallNodejsApiComponent:
+    Type: AWS::ImageBuilder::Component
+    Properties:
+      Name: InstallNodejsApiComponent
+      Platform: Linux
+      Version: '1.0.1'
+      Description: Installing jq mysql and nodejs
+      ChangeDescription: initial load
+      SupportedOsVersions: 
+        - 'Amazon Linux 2023'
+      Data: |
+        name: NodejsBikesApi
+        description: Inline Data for nodejs API image build
+        schemaVersion: 1.0
+
+        phases:
+          - name: build
+            steps:
+              - name: InstallJqTelnetNodejs
+                action: ExecuteBash
+                onFailure: Abort
+                inputs:
+                  commands:
+                    - yum update -y
+                    - yum install -y mariadb105 jq telnet zip unzip
+                    - curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
+                    - mv /.nvm /home/ec2-user && chown -R ec2-user:ec2-user /home/ec2-user
+                    - sudo ec2-user - 
+                    - echo 'export NVM_DIR="/home/ec2-user/.nvm"' >> /home/ec2-user/.bashrc
+                    - echo '[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" ' >> /home/ec2-user/.bashrc
+                    - source /home/ec2-user/.bashrc
+                    - source /home-ec2-user/.nvm/nvm.sh
+                    - nvm install 18
+                    - sudo su - 
+                    - mkdir /input
+                    - chown ec2-user:ec2-user /input
+                    - mkdir /home/ec2-user/scripts
+                    - chown ec2-user:ec2-user /home/ec2-user/scripts
+                    - mkdir /home/ec2-user/apps
+                    - chown ec2-user:ec2-user /home/ec2-user/apps
+               
+          - name: validate
+            steps:
+              - name: InstallJqTelnetNodejs
+                action: ExecuteBash
+                onFailure: Abort
+                inputs:
+                  commands:
+                    - node --version
+                    - ls -ltr /input
+
+          - name: test
+            steps:
+              - name: InstallJqTelnetNodejs
+                action: ExecuteBash
+                onFailure: Abort
+                inputs:
+                  commands:
+                    - node --version
+                    - ls -ltr /input
+
+       

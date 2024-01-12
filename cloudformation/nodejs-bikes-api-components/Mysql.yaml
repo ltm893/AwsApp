@@ -1,0 +1,63 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Rds Mysql Multi-AZ
+Parameters:
+  BikeDataBucketFile:
+    Type: String
+    Default: s3://ltm893-mysql-bike-loads/load-bikes.sql
+
+  EnvironmentName:
+    Description: Environment name that is prefixed to resource names
+    Type: String
+    AllowedValues: [ ami, dev, prd ] 
+  
+Resources:
+  NodejsInstanceSecretPolicy:
+    Type: AWS::IAM::Policy
+    DependsOn: BikesDbSecret
+    Properties:
+      PolicyName: Ec2MyqlSecretPolicy
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: "secretsmanager:GetSecretValue"
+            Resource: !Ref BikesDbSecret
+      Roles:
+        - !ImportValue Nodejs4MysqlInstanceRoleExport
+
+  RdsMysqlDb:
+    Type: AWS::RDS::DBInstance
+    DependsOn: BikesDbSecret
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Properties:
+      VPCSecurityGroups:
+        - !ImportValue RDSSecurityGroupExport
+      AllocatedStorage: "5"
+      DBName: !Sub ${EnvironmentName}bikesdb
+      EnableIAMDatabaseAuthentication: true
+      DBInstanceClass: db.t2.small
+      Engine: MySQL
+      DBSubnetGroupName: !ImportValue RdsMysSubnetGroupExport
+      MasterUsername: !Sub "{{resolve:secretsmanager:${EnvironmentName}-BikesDbSecret:SecretString:username}}"
+      MasterUserPassword: !Sub "{{resolve:secretsmanager:${EnvironmentName}-BikesDbSecret:SecretString:password}}"
+      PubliclyAccessible: false
+      MultiAZ: true
+
+
+  BikesDbSecret:
+    Type: "AWS::SecretsManager::Secret"
+    Properties:
+      Name: !Sub ${EnvironmentName}-BikesDbSecret
+      Description: "This secret has a dynamically generated secret password."
+      GenerateSecretString:
+        SecretStringTemplate: '{"username": "admin"}'
+        GenerateStringKey: "password"
+        PasswordLength: 30
+        ExcludeCharacters: '"@/\'
+      Tags:
+        - Key: AppKey
+          Value: AppValue
+
+
+ 

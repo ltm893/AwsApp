@@ -1,0 +1,52 @@
+
+name: NodejsBikesApi
+description: Inline Data for nodejs API image build
+schemaVersion: 1.0
+
+phases:
+  - name: build
+    steps:
+      - name: UnzipSimpleApp
+        action: ExecuteBash
+        onFailure: Continue
+        inputs:
+          commands:
+            - cd /home/ec2-user/apps/bikes
+            - unzip simpleApp.zip
+
+      - name: SettingFolderPropertyEc2userApps
+        action: SetFolderOwner
+        inputs:
+        - path: /home/ec2-user/apps
+          owner: ec2-user
+
+      - name: InstallSimpleApp
+        action: ExecuteBash
+        onFailure: Abort
+        inputs:
+          commands:
+            - '/bin/su -c  "cd /home/ec2-user/app/bikes/simpleApp" - ec2-user'
+            - '/bin/su -c  "node server.js" - ec2-user'
+
+
+
+
+
+
+  -  name: validate
+     steps:
+       - name: DownloadSimpleApp
+         action: ExecuteBash
+         onFailure: Abort
+         inputs:
+           commands:
+             - ls -ltr  /opt/awstoe
+
+  - name: test
+    steps:
+      - name: DownloadSimpleApp
+        action: ExecuteBash
+        onFailure: Abort
+        inputs:
+          commands:
+            - ls -ltr  /opt/awstoe
