@@ -9,6 +9,10 @@ Parameters:
   ImageId:
     Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
     Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-x86_64
+  EnvironmentName:
+    Description: Environment name that is prefixed to resource names
+    Type: String
+    AllowedValues: [ ami, dev, prod ]
 
 Resources:
   BikesApiPipeline:
@@ -27,13 +31,21 @@ Resources:
     Type: 'AWS::ImageBuilder::InfrastructureConfiguration'
     Properties:
       Name: nodejsAp infrastructure configuration
-      InstanceProfileName: !ImportValue Nodejs4MysqlInstanceProfileExport
+      InstanceProfileName:
+        Fn::ImportValue:
+          'Fn::Sub': 
+            'Nodejs4MysqlInstanceProfileExport-${EnvironmentName}'
       Description: describing
       InstanceTypes: 
         - !Ref InstanceType
       SecurityGroupIds:
-        - !ImportValue  Ec2InstanceSecurityGroupExport
-      SubnetId: !ImportValue RdsSubnet1
+        - Fn::ImportValue: 
+            'Fn::Sub': 'Ec2InstanceSecurityGroupExport-${EnvironmentName}'
+      SubnetId:
+        Fn::ImportValue: 
+          'Fn::Sub':
+            'RdsSubnet1-${EnvironmentName}'
+
 
 
   NodejsApiRecipe:

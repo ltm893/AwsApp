@@ -222,27 +222,31 @@ Outputs:
     Description: A reference to the created VPC
     Value: !Ref VPC
     Export:
-      Name: TwoPubPrivVpcId
+      Name:
+        'Fn::Sub':
+          'TwoPubPrivVpcId-${EnvironmentName}'
 
   PrivateSubnet1:
     Description: A reference to the private subnet in the 1st Availability Zone
     Value: !Ref PrivateSubnet1
     Export:
-      Name: RdsSubnet1
+      Name: 
+        'Fn::Sub':
+          'RdsSubnet1-${EnvironmentName}'
 
   PrivateSubnet2:
     Description: A reference to the private subnet in the 2nd Availability Zone
     Value: !Ref PrivateSubnet2
     Export:
-      Name: RdsSubnet2
+      Name:
+        'Fn::Sub':
+          'RdsSubnet2-${EnvironmentName}'
 
-  
   RdsMysSubnetGroup:
     Description: Subnet for RDS MySql
     Value: !Ref DBSubnetGroup
     Export:
-      Name: RdsMysSubnetGroupExport
+      Name:
+        'Fn::Sub':
+          'RdsMysSubnetGroupExport-${EnvironmentName}'
 
- 
-
-  

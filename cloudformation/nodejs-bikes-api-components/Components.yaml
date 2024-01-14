@@ -20,19 +20,26 @@ Resources:
       Protocol: TCP
       Port: 8080
       UnhealthyThresholdCount: 2
-      VpcId: !ImportValue TwoPubPrivVpcId
+      VpcId:
+        Fn::ImportValue:
+          'Fn::Sub':
+            'TwoPubPrivVpcId-${EnvironmentName}'
+
 
   NetworkElasticLoadBalancer:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
-      Name: BikesNlb
+      Name:  !Sub ${EnvironmentName}-BikesNlb
       Type: network
       Scheme: internal
-      Subnets: 
-        - !ImportValue RdsSubnet1
-        - !ImportValue RdsSubnet2
-      SecurityGroups: 
-        - !ImportValue Ec2InstanceSecurityGroupExport
+      Subnets:
+        - Fn::ImportValue:
+            'Fn::Sub': 'RdsSubnet1-${EnvironmentName}'
+        - Fn::ImportValue:
+            'Fn::Sub': 'RdsSubnet2-${EnvironmentName}'
+      SecurityGroups:
+        - Fn::ImportValue:
+            'Fn::Sub': 'Ec2InstanceSecurityGroupExport-${EnvironmentName}'
 
   NlbListener:
    Type: 'AWS::ElasticLoadBalancingV2::Listener'
@@ -55,9 +62,11 @@ Resources:
       MinSize: "2"
       TargetGroupARNs: 
         - !Ref NodejsTargeGroup
-      VPCZoneIdentifier: 
-        - !ImportValue RdsSubnet1
-        - !ImportValue RdsSubnet2
+      VPCZoneIdentifier:
+        - Fn::ImportValue: 
+            'Fn::Sub': 'RdsSubnet1-${EnvironmentName}'
+        - Fn::ImportValue: 
+            'Fn::Sub': 'RdsSubnet2-${EnvironmentName}'
       LaunchTemplate:
         LaunchTemplateId: !Ref NodejsLaunchTemplate
         Version: !GetAtt NodejsLaunchTemplate.LatestVersionNumber
@@ -68,11 +77,15 @@ Resources:
       LaunchTemplateName: !Sub ${AWS::StackName}-launch-template
       LaunchTemplateData:
         IamInstanceProfile:
-          Arn: !ImportValue  Nodejs4MysqlInstanceProfileArnExport
+          Arn: 
+            Fn::ImportValue:
+              'Fn::Sub':
+                'Nodejs4MysqlInstanceProfileArnExport-${EnvironmentName}'
         ImageId:  !Ref AmiId
         InstanceType:  t3.micro
-        SecurityGroupIds: 
-        - !ImportValue  Ec2InstanceSecurityGroupExport
+        SecurityGroupIds:
+          - Fn::ImportValue: 
+              'Fn::Sub': 'Ec2InstanceSecurityGroupExport-${EnvironmentName}'
         TagSpecifications:
           - ResourceType: instance
             Tags:
@@ -124,13 +137,15 @@ Resources:
   BikesApiVpclink:
     Type: AWS::ApiGatewayV2::VpcLink
     Properties:
-      Name: BikesApiVpclink
-      SecurityGroupIds: 
-        - !ImportValue  Ec2InstanceSecurityGroupExport
-      SubnetIds: 
-        - !ImportValue RdsSubnet1
-        - !ImportValue RdsSubnet2
-
+      Name:  !Sub ${EnvironmentName}-BikesApiVpclink
+      SecurityGroupIds:
+        - Fn::ImportValue: 
+            'Fn::Sub': 'Ec2InstanceSecurityGroupExport-${EnvironmentName}'
+      SubnetIds:  
+        - Fn::ImportValue:
+             'Fn::Sub': 'RdsSubnet1-${EnvironmentName}'
+        - Fn::ImportValue:
+             'Fn::Sub': 'RdsSubnet2-${EnvironmentName}'
   BikeApiIntegration:
     Type: AWS::ApiGatewayV2::Integration
     Properties: 
@@ -228,13 +243,17 @@ Outputs:
     Description: Reference to  Bike Http Api
     Value: !Ref BikesHttpApi
     Export:
-      Name: BikesHttpApiExport
+      Name:
+        'Fn::Sub':
+          'BikesHttpApiExport-${EnvironmentName}'
 
   BikesApiStage:
     Description: Reference to BikesApiStage
     Value: !Ref BikesApiStage
     Export:
-      Name: BikesApiStageExport
+      Name:
+        'Fn::Sub':
+          'BikesApiStageExport-${EnvironmentName}'
       
 
     

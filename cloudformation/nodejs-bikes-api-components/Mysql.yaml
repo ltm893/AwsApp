@@ -8,14 +8,14 @@ Parameters:
   EnvironmentName:
     Description: Environment name that is prefixed to resource names
     Type: String
-    AllowedValues: [ ami, dev, prd ] 
+    AllowedValues: [ ami, dev, prod ] 
   
 Resources:
   NodejsInstanceSecretPolicy:
     Type: AWS::IAM::Policy
     DependsOn: BikesDbSecret
     Properties:
-      PolicyName: Ec2MyqlSecretPolicy
+      PolicyName:  !Sub ${EnvironmentName}-Ec2MyqlSecretPolicy
       PolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -23,7 +23,8 @@ Resources:
             Action: "secretsmanager:GetSecretValue"
             Resource: !Ref BikesDbSecret
       Roles:
-        - !ImportValue Nodejs4MysqlInstanceRoleExport
+        - Fn::ImportValue:
+            'Fn::Sub': 'Nodejs4MysqlInstanceRoleExport-${EnvironmentName}'
 
   RdsMysqlDb:
     Type: AWS::RDS::DBInstance
@@ -32,13 +33,17 @@ Resources:
     DeletionPolicy: Delete
     Properties:
       VPCSecurityGroups:
-        - !ImportValue RDSSecurityGroupExport
+        - Fn::ImportValue:
+            'Fn::Sub': 'RDSSecurityGroupExport-${EnvironmentName}'
       AllocatedStorage: "5"
       DBName: !Sub ${EnvironmentName}bikesdb
       EnableIAMDatabaseAuthentication: true
       DBInstanceClass: db.t2.small
       Engine: MySQL
-      DBSubnetGroupName: !ImportValue RdsMysSubnetGroupExport
+      DBSubnetGroupName: 
+        Fn::ImportValue: 
+          'Fn::Sub':
+            'RdsMysSubnetGroupExport-${EnvironmentName}'
       MasterUsername: !Sub "{{resolve:secretsmanager:${EnvironmentName}-BikesDbSecret:SecretString:username}}"
       MasterUserPassword: !Sub "{{resolve:secretsmanager:${EnvironmentName}-BikesDbSecret:SecretString:password}}"
       PubliclyAccessible: false

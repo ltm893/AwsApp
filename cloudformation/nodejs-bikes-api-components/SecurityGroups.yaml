@@ -1,12 +1,20 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: Security Groups for EC Nodejs API server and Rds Mysql
-  
+Parameters:
+  EnvironmentName:
+    Description: Environment name that is prefixed to resource names
+    Type: String
+    AllowedValues: [ami, dev, prod ] 
+
 Resources:
   InstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Allow http to client host
-      VpcId: !ImportValue TwoPubPrivVpcId
+      VpcId: 
+        Fn::ImportValue:
+          'Fn::Sub': 
+            'TwoPubPrivVpcId-${EnvironmentName}'
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 8080
@@ -21,7 +29,10 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Allow nodejs security group
-      VpcId:  !ImportValue TwoPubPrivVpcId
+      VpcId: 
+        Fn::ImportValue:
+          'Fn::Sub': 
+            'TwoPubPrivVpcId-${EnvironmentName}'
       SecurityGroupIngress:
         - IpProtocol: tcp
           SourceSecurityGroupId: !Ref InstanceSecurityGroup
@@ -33,10 +44,14 @@ Outputs:
     Description: Security for Inbound Node Traffic
     Value: !Ref InstanceSecurityGroup
     Export:
-      Name: Ec2InstanceSecurityGroupExport
+      Name:
+        'Fn::Sub': 
+          'Ec2InstanceSecurityGroupExport-${EnvironmentName}'
 
   RdsSecurityGroup:
     Description: RDS security group only access from Nodejs SG
     Value: !Ref  RdsEC2SecurityGroup
     Export:
-      Name: RDSSecurityGroupExport
+      Name:
+        'Fn::Sub': 
+          'RDSSecurityGroupExport-${EnvironmentName}'

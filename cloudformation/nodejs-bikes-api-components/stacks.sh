@@ -5,7 +5,7 @@ S3Bucket=s3://dlivcom-bikes-api-code
 S3Opt=$S3Bucket/opt
 S3Service=$S3Bucket/service
 S3Scripts=$S3Bucket/scripts
-ENV_PARMS=(InstanceProfile Components Mysql Dns)
+ENV_PARMS=(InstanceProfile SecurityGroups ImageBuilder Components Mysql Dns)
 IMAGEBUILDSTACK=ImageBuilder-ami
 DBNAME=bikesdb
 DBSECRET=-BikesDbSecret
@@ -105,9 +105,7 @@ create_stack_jq() {
         if [[ "$STACK_ENV_NAME" != "ami" ]]   &&  [[ $(_jq '.name') == "ImageBuilder" ]] ; then
             continue
         fi
-        if [[ "$STACKNAME" == "Mysql" ]] ; then
-            continue
-        fi
+     
 
         STACKNAME=$(_jq '.name')'-'$STACK_ENV_NAME
         COMMANDSTRING=(aws cloudformation create-stack --profile $PROFILENAME --stack-name $STACKNAME --tags $TAGS --template-body $(_jq '.template'))
@@ -119,7 +117,6 @@ create_stack_jq() {
             COMMANDSTRING+=( "${NETPARAMS[@]}")
         fi
         if [[ $(echo ${ENV_PARMS[@]} | fgrep -w $(_jq '.name')  ) ]] ; then
-       # if  [[ $(_jq '.name') == "InstanceProfile" ]] ||  [[ $(_jq '.name') == "Components" ]] || [[ $(_jq '.name') == "Mysql" ]]  ; then
             COMMANDSTRING+=(--parameters ParameterKey=EnvironmentName,ParameterValue=$STACK_ENV_NAME)
             if  [[ $(_jq '.name') == "Components" ]] ; then
                 COMMANDSTRING+=(ParameterKey=AmiId,ParameterValue=/EC2/$STACK_ENV_NAME/nodejsAmiId)
@@ -148,12 +145,9 @@ create_stack_jq() {
 
 
 delete_stack_jq () {
-     if [[ "$1" == "ami" ]] || [[ "$1" ==  "dev" ]] || [[ "$1" ==  "prd" ]] ; then 
-       STACK_ENV_NAME=$1
-    else
-        echo "Environment Required ami or dev or prod"
-        exit 0
-    fi
+    
+    STACK_ENV_NAME=$1
+   
     # loop through jq query of cli result
     for i in $(aws cloudformation describe-stacks  --profile todd | jq -r --arg jq_env_name $STACK_ENV_NAME '.Stacks[] |  select(.Tags[] | length > 0) | select(.Tags[].Key == "Env" and .Tags[].Value == $jq_env_name ) | @base64 ' ); do
         _jq() {

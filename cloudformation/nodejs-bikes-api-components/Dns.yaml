@@ -17,11 +17,18 @@ Resources:
            arn:aws:acm:us-east-2:635054736638:certificate/6910396e-8f4e-4a65-9419-d5f1fe8ee39e
 
   MyApiMapping:
+    DependsOn: DlivcomDns
     Type: 'AWS::ApiGatewayV2::ApiMapping'
     Properties:
       DomainName: !Sub ${EnvironmentName}.apps.dliv.com
-      ApiId: !ImportValue BikesHttpApiExport
-      Stage: !ImportValue BikesApiStageExport
+      ApiId: 
+        Fn::ImportValue:
+          'Fn::Sub':
+            'BikesHttpApiExport-${EnvironmentName}'
+      Stage:
+        Fn::ImportValue:
+          'Fn::Sub':
+            'BikesApiStageExport-${EnvironmentName}'
 
   DlivcomDns:
     Type: AWS::Route53::RecordSet

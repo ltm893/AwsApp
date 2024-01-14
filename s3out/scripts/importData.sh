@@ -1,6 +1,6 @@
 #!/bin/bash
 set -eo pipefail
-
+echo 'Getting RDS Hostname'
 HOSTENV=`aws ec2 describe-tags | jq -r '.Tags | map(select(.Key =="ENVHOST" and  .ResourceType=="instance"))[0] | .Value '`
 echo 'Downloading from s3'
 aws s3 cp s3://ltm893-mysql-bike-loads/load-bikes.sql /input
