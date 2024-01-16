@@ -4,6 +4,7 @@ const { writeFile } = require('node:fs/promises');
 const awsCli = require('aws-cli-js');
 
 const js1 = (testEnv,clientId) => {
+    const apiUrl =   'https://' + testEnv + '.apps.dliv.com' ; 
     let jsText = `
     let token, tokenType, expires ; 
     const authHost = 'https://`
@@ -45,9 +46,8 @@ const js1 = (testEnv,clientId) => {
                 tokenType = data.token_type;
                 expires = new Date().getTime() + (data.expires_in * 1000);
                 console.log(token);
-                
-                const str = 'https://apps.dliv.com' ; 
-                const url = new URL(str);
+                const str = '` + apiUrl + "';\n"
+                jsText  +=  `const url = new URL(str);
                 const request = new Request(url, {
                      method: 'GET',
                      headers: {
@@ -73,11 +73,13 @@ const js1 = (testEnv,clientId) => {
     }
 
     const getDlivApps = () => {
+        `
+        jsText += "const url ='" + apiUrl + "';\n"
+        jsText += `
         console.log("Fetching Dliv")
         console.log(token)
         console.log(tokenType)
-        fetch('https://apps.dliv.com', {
-            mode: "no-cors",
+        fetch( url , { 
             headers: {
                 'Authorization': tokenType + ' ' + token,
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -121,7 +123,7 @@ const js1 = (testEnv,clientId) => {
 
 
 const writeJsFile = async (text) => {
-    const jsFile = path.join(__dirname, 'public/client.js') ;
+    const jsFile = path.join(__dirname, '../public/client.js') ;
     const result = await writeFile(  jsFile, text);
     return
 }
@@ -147,7 +149,7 @@ module.exports = {
           //  return clientId
           const jsText = js1(testEnv, clientId) ; 
           const writeResult = await writeJsFile(jsText) ;
-          return "OK" ; 
+          return true ; 
         } catch (err) {
             console.error(err)
         }

@@ -2,7 +2,7 @@
     let token, tokenType, expires ; 
     const authHost = 'https://dev-dliv.auth.us-east-2.amazoncognito.com/oauth2/token' ; 
     const authCodeHost = 'https://dev-dliv.auth.us-east-2.amazoncognito.com/oauth2/authorize?' ;
-    const clientId = '4k50h0a5bfnrjrt8svledohf2';
+    const clientId = '71v8mi36sdpbfhmd4n0r40894o';
 	const RedirectUrl1 = 'http://localhost:3000' ; 
 
     const redirectForAuthCode = () => {
@@ -34,9 +34,8 @@
                 tokenType = data.token_type;
                 expires = new Date().getTime() + (data.expires_in * 1000);
                 console.log(token);
-                
-                const str = 'https://apps.dliv.com' ; 
-                const url = new URL(str);
+                const str = 'https://dev.apps.dliv.com';
+const url = new URL(str);
                 const request = new Request(url, {
                      method: 'GET',
                      headers: {
@@ -62,11 +61,12 @@
     }
 
     const getDlivApps = () => {
+        const url ='https://dev.apps.dliv.com';
+
         console.log("Fetching Dliv")
         console.log(token)
         console.log(tokenType)
-        fetch('https://apps.dliv.com', {
-            mode: "no-cors",
+        fetch( url , { 
             headers: {
                 'Authorization': tokenType + ' ' + token,
                 'Content-Type': 'application/x-www-form-urlencoded',
