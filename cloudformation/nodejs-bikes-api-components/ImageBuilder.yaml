@@ -74,167 +74,168 @@ Resources:
       ChangeDescription: initial load
       SupportedOsVersions: 
         - 'Amazon Linux 2023'
-      Data: |
-        name: NodejsBikesApi
-        description: Inline Data for nodejs API image build
-        schemaVersion: 1.0
+      Data: 
+        'Fn::Sub': |
+          name: NodejsBikesApi
+          description: Inline Data for nodejs API image build
+          schemaVersion: 1.0
 
-        phases:
-          - name: build
-            steps:
-              - name: DownloadS3OptFiles
-                action: S3Download
-                onFailure: Abort
-                inputs:
-                  - source: s3://dlivcom-bikes-api-code/opt/*
-                    destination: /opt/finishbuild
-                    overwrite: true
-              
-              - name: DownloadRemoteFile
-                action: WebDownload
-                maxAttempts: 3
-                inputs:
-                - source: https://awstoe-us-east-2.s3.us-east-2.amazonaws.com/latest/linux/386/awstoe
-                  destination: /opt/finishbuild/awstoe
+          phases:
+            - name: build
+              steps:
+                - name: DownloadS3OptFiles
+                  action: S3Download
+                  onFailure: Abort
+                  inputs:
+                    - source: s3://dlivcom-bikes-api-code/opt/*
+                      destination: /opt/finishbuild
+                      overwrite: true
+                
+                - name: DownloadRemoteFile
+                  action: WebDownload
+                  maxAttempts: 3
+                  inputs:
+                  - source: https://awstoe-us-east-2.s3.us-east-2.amazonaws.com/latest/linux/386/awstoe
+                    destination: /opt/finishbuild/awstoe
 
-              - name: ModifyFinishPermissions
-                action: SetFolderPermissions
-                inputs:
-                  - path: /opt/finishbuild/
-                    permissions: 755
-                    recursive: true
+                - name: ModifyFinishPermissions
+                  action: SetFolderPermissions
+                  inputs:
+                    - path: /opt/finishbuild/
+                      permissions: 755
+                      recursive: true
 
-              - name: UnzipSimpleApp
-                action: ExecuteBash
-                onFailure: Abort
-                inputs:
-                  commands:
-                    - unzip /opt/finishbuild/simpleApp.zip -d /home/ec2-user/apps/bikes
+                - name: UnzipSimpleApp
+                  action: ExecuteBash
+                  onFailure: Abort
+                  inputs:
+                    commands:
+                      - unzip /opt/finishbuild/simpleApp.zip -d /home/ec2-user/apps/bikes
 
-              - name: SettingFolderPropertyEc2userApps
-                action: SetFolderOwner
-                onFailure: Abort
-                inputs:
-                - path: /home/ec2-user/apps
-                  owner: ec2-user
-              
-              - name: DownloadSimpleAppService
-                action: S3Download
-                onFailure: Abort
-                inputs:
-                  - source: s3://dlivcom-bikes-api-code/service/simpleApp.service
-                    destination: /etc/systemd/system/simpleApp.service
-                    overwrite: true
+                - name: SettingFolderPropertyEc2userApps
+                  action: SetFolderOwner
+                  onFailure: Abort
+                  inputs:
+                  - path: /home/ec2-user/apps
+                    owner: ec2-user
+                
+                - name: DownloadSimpleAppService
+                  action: S3Download
+                  onFailure: Abort
+                  inputs:
+                    - source: s3://dlivcom-bikes-api-code/service/simpleApp.service
+                      destination: /etc/systemd/system/simpleApp.service
+                      overwrite: true
 
-              - name: ModifyingSimpleAppServicePermissions
-                action: SetFilePermissions
-                inputs:
+                - name: ModifyingSimpleAppServicePermissions
+                  action: SetFilePermissions
+                  inputs:
+                    - path: /etc/systemd/system/simpleApp.service
+                      permissions: 755
+
+                - name: SettingSimpleAppServiceFilePerms
+                  action: SetFileOwner
+                  onFailure: Abort
+                  inputs:
                   - path: /etc/systemd/system/simpleApp.service
-                    permissions: 755
+                    owner: ec2-user
 
-              - name: SettingSimpleAppServiceFilePerms
-                action: SetFileOwner
-                onFailure: Abort
-                inputs:
-                - path: /etc/systemd/system/simpleApp.service
-                  owner: ec2-user
+                - name: DownloadScripts
+                  action: S3Download
+                  onFailure: Abort
+                  inputs:
+                    - source: s3://dlivcom-bikes-api-code/scripts/*
+                      destination: /home/ec2-user/scripts/
+                      overwrite: true
 
-              - name: DownloadScripts
-                action: S3Download
-                onFailure: Abort
-                inputs:
-                  - source: s3://dlivcom-bikes-api-code/scripts/*
-                    destination: /home/ec2-user/scripts/
-                    overwrite: true
-
-              - name: SettingFolderPropertyImportData
-                action: SetFolderOwner
-                onFailure: Abort
-                inputs:
-                - path: /home/ec2-user/scripts/
-                  owner: ec2-user
-              
-              - name: ModifyingImportDataPermissions
-                action: SetFolderPermissions
-                inputs:
+                - name: SettingFolderPropertyImportData
+                  action: SetFolderOwner
+                  onFailure: Abort
+                  inputs:
                   - path: /home/ec2-user/scripts/
-                    permissions: 755
+                    owner: ec2-user
+                
+                - name: ModifyingImportDataPermissions
+                  action: SetFolderPermissions
+                  inputs:
+                    - path: /home/ec2-user/scripts/
+                      permissions: 755
 
-              
-                    
-          - name: validate
-            steps: 
-              - name: ListAwstoe    
-                action: ExecuteBash
-                onFailure: Abort
-                inputs:
-                  commands:
-                    - ls -ltr  /opt/finishbuild/awstoe
+                
+                      
+            - name: validate
+              steps: 
+                - name: ListAwstoe    
+                  action: ExecuteBash
+                  onFailure: Abort
+                  inputs:
+                    commands:
+                      - ls -ltr  /opt/finishbuild/awstoe
 
-              - name: ListAppDir 
-                action: ExecuteBash
-                onFailure: Abort
-                inputs:
-                  commands:
-                    - ls -ltr  /home/ec2-user/apps/bikes/simpleApp
+                - name: ListAppDir 
+                  action: ExecuteBash
+                  onFailure: Abort
+                  inputs:
+                    commands:
+                      - ls -ltr  /home/ec2-user/apps/bikes/simpleApp
 
-              - name: ListImportData     
-                action: ExecuteBash
-                onFailure: Abort
-                inputs:
-                  commands:
-                    - ls -ltr  /home/ec2-user/scripts/importData.sh
+                - name: ListImportData     
+                  action: ExecuteBash
+                  onFailure: Abort
+                  inputs:
+                    commands:
+                      - ls -ltr  /home/ec2-user/scripts/importData.sh
 
-              - name: ListStartApp    
-                action: ExecuteBash
-                onFailure: Abort
-                inputs:
-                  commands:
-                    - ls -ltr  /home/ec2-user/scripts/startApp
+                - name: ListStartApp    
+                  action: ExecuteBash
+                  onFailure: Abort
+                  inputs:
+                    commands:
+                      - ls -ltr  /home/ec2-user/scripts/startApp
 
-              - name: StartSimpleApp
-                action: ExecuteBash
-                onFailure: Abort
-                inputs:
-                  commands:
-                    - /bin/su -c  "sudo systemctl start simpleApp.service" - ec2-user
-                        
-          - name: test
-            steps:
-              - name: ListAwstoe
-                action: ExecuteBash
-                onFailure: Abort
-                inputs:
-                  commands:
-                    - ls -ltr /opt/finishbuild/awstoe
+                - name: StartSimpleApp
+                  action: ExecuteBash
+                  onFailure: Abort
+                  inputs:
+                    commands:
+                      - /bin/su -c  "sudo systemctl start simpleApp.service" - ec2-user
+                          
+            - name: test
+              steps:
+                - name: ListAwstoe
+                  action: ExecuteBash
+                  onFailure: Abort
+                  inputs:
+                    commands:
+                      - ls -ltr /opt/finishbuild/awstoe
 
-              - name: LisAppDir     
-                action: ExecuteBash
-                onFailure: Abort
-                inputs:
-                  commands:
-                    - ls -ltr   /home/ec2-user/apps/bikes/simpleApp    
+                - name: LisAppDir     
+                  action: ExecuteBash
+                  onFailure: Abort
+                  inputs:
+                    commands:
+                      - ls -ltr   /home/ec2-user/apps/bikes/simpleApp    
 
-              - name: ListImportData     
-                action: ExecuteBash
-                onFailure: Abort
-                inputs:
-                  commands:
-                    - ls -ltr  /home/ec2-user/scripts/importData.sh
+                - name: ListImportData     
+                  action: ExecuteBash
+                  onFailure: Abort
+                  inputs:
+                    commands:
+                      - ls -ltr  /home/ec2-user/scripts/importData.sh
 
-              - name: ListStartApp    
-                action: ExecuteBash
-                onFailure: Abort
-                inputs:
-                  commands:
-                    - ls -ltr  /home/ec2-user/scripts/startApp
+                - name: ListStartApp    
+                  action: ExecuteBash
+                  onFailure: Abort
+                  inputs:
+                    commands:
+                      - ls -ltr  /home/ec2-user/scripts/startApp
 
-              - name: StartSimpleApp
-                action: ExecuteBash
-                onFailure: Abort
-                inputs:
-                  commands:
-                    - /bin/su -c  "sudo systemctl start simpleApp.service" - ec2-user
+                - name: StartSimpleApp
+                  action: ExecuteBash
+                  onFailure: Abort
+                  inputs:
+                    commands:
+                      - /bin/su -c  "sudo systemctl start simpleApp.service" - ec2-user
 
   InstallNodejsApiComponent:
     Type: AWS::ImageBuilder::Component
@@ -266,6 +267,7 @@ Resources:
                     - sudo ec2-user - 
                     - echo 'export NVM_DIR="/home/ec2-user/.nvm"' >> /home/ec2-user/.bashrc
                     - echo '[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" ' >> /home/ec2-user/.bashrc
+                    - echo 'export NODE_ENV=${EnvironmentName}'
                     - source /home/ec2-user/.bashrc
                     - source /home-ec2-user/.nvm/nvm.sh
                     - nvm install 18

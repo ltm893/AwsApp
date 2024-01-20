@@ -4,24 +4,51 @@ const { writeFile } = require('node:fs/promises');
 const awsCli = require('aws-cli-js');
 
 const js1 = (testEnv,clientId) => {
-    const apiUrl =   'https://' + testEnv + '.apps.dliv.com' ; 
     let jsText = `
-    let token, tokenType, expires ; 
-    const authHost = 'https://`
-    jsText += testEnv ; 
-    jsText += `-dliv.auth.us-east-2.amazoncognito.com/oauth2/token' ; 
-    const authCodeHost = 'https://`
-    jsText  += testEnv ;
-    jsText += `-dliv.auth.us-east-2.amazoncognito.com/oauth2/authorize?' ;
-    const clientId = '`
-    jsText  += clientId + "';\n\t" ;
-    jsText  += `const RedirectUrl1 = 'http://localhost:3000' ; 
+    let token, tokenType, expires ;
+    const testEnv = '${clientId}' ; 
+    const authHost = 'https://${testEnv}-dliv.auth.us-east-2.amazoncognito.com/oauth2/token' ;
+    const authCodeHost = 'https://${testEnv}-dliv.auth.us-east-2.amazoncognito.com/oauth2/authorize?' ;
+    const clientId = '${clientId}';
+	const redirectAuthCode = 'http://localhost:3000/cogTest' ; 
+    const redirectAuthToken = 'http://localhost:3000/cogAuthToken' ;
+
+    
+    window.onload = () => {
+        checkIncoming() ; 
+    };
+
+    const checkIncoming = () => {
+        const host = window.location.host;
+        const pathname = window.location.pathname;
+        const search = window.location.search;
+        const hash = window.location.hash;
+        console.log("Token", token)
+        console.log("expires ", expires)
+        console.log("host", host)
+        console.log("path", pathname )
+        console.log("search", search)
+        console.log("hash", hash)
+
+        
+        const urlParams = new URLSearchParams(search);
+        const authCode = urlParams.get('code') ; 
+        if(authCode) {
+            // window.history.replaceState({}, document.title);
+            console.log("authcode", authCode)
+            getOAuthToken(authCode)
+        }
+        else {
+            redirectForAuthCode()
+        }
+        
+    }
 
     const redirectForAuthCode = () => {
         const authCodeUrl = authCodeHost + new URLSearchParams({
             response_type: 'code',
             client_id: clientId,
-            redirect_uri: RedirectUrl1,
+            redirect_uri: redirectAuthCode,
             scope: "email" 
             }) ;
             window.location.href = authCodeUrl ; 
@@ -32,7 +59,7 @@ const js1 = (testEnv,clientId) => {
         if(authCode) {
             fetch(authHost , {
             method: 'POST',  
-            body: 'grant_type=authorization_code&code=' + authCode + '&client_id=' + clientId + '&redirect_uri=' + RedirectUrl1 ,
+            body: 'grant_type=authorization_code&code=' + authCode + '&client_id=' + clientId + '&redirect_uri=' + redirectAuthCode ,
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded'
             }
@@ -45,9 +72,9 @@ const js1 = (testEnv,clientId) => {
                 token = data.access_token;
                 tokenType = data.token_type;
                 expires = new Date().getTime() + (data.expires_in * 1000);
-                console.log(token);
-                const str = '` + apiUrl + "';\n"
-                jsText  +=  `const url = new URL(str);
+                console.log("Token: " + token);
+                const str = 'https://${testEnv}.apps.dliv.com' ;
+                const url = new URL(str);
                 const request = new Request(url, {
                      method: 'GET',
                      headers: {
@@ -61,6 +88,7 @@ const js1 = (testEnv,clientId) => {
                         return resp.json();
                     }).then(function (data) {
                         console.log('data', data);
+                        document.getElementById('displayCogApi').contentWindow.document.body.innerHTML = data.title ; 
                     }).catch(function (err) {
                         console.log('something went wrong', err);
                     });
@@ -68,18 +96,15 @@ const js1 = (testEnv,clientId) => {
             })
         }
         else {
-            alter("No authorization code")
+            alert("No authorization code")
         }
     }
 
     const getDlivApps = () => {
-        `
-        jsText += "const url ='" + apiUrl + "';\n"
-        jsText += `
         console.log("Fetching Dliv")
         console.log(token)
         console.log(tokenType)
-        fetch( url , { 
+        fetch( 'https://${testEnv}.apps.dliv.com'  , { 
             headers: {
                 'Authorization': tokenType + ' ' + token,
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -94,6 +119,7 @@ const js1 = (testEnv,clientId) => {
         }).then(function (data) {
             // Log the pet data
             console.log('from apps', data);
+            document.getElementById('displayCogApi').contentWindow.document.body.innerHTML = data.title ; 
         }).catch(function (err) {
            console.log('something went wrong callinbg apps ', err);
         });
@@ -110,11 +136,6 @@ const js1 = (testEnv,clientId) => {
         console.log('from cache');
         getDlivApps()
     }
-   
-    const appsBtnElement = document.getElementById("getAppsBtn");
-    appsBtnElement.addEventListener("click",redirectForAuthCode);
-    const displayApp = document.getElementById("displayApps");
-
     `
     return jsText ;
    
@@ -130,6 +151,7 @@ const writeJsFile = async (text) => {
 
 module.exports = {
     makeCogJsFile: async (testEnv) => {
+        // const jsText = js1(testEnv, "12345") ;
         const poolName = testEnv + '-bikes-apigateway' ;
         console.log("testEnv: " +  testEnv)
         const Aws = awsCli.Aws;

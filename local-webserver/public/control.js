@@ -17,9 +17,7 @@ const selectEnvEventHandler = async (event) => {
     else {
         return false;
     }
-    window.location.replace(redirectString);
-    }
+   window.location.replace(redirectString);
+}  
 
 envSelect.addEventListener('change', selectEnvEventHandler, true);
-
-

@@ -1,0 +1,8 @@
+{   "ec2Details": [
+    { "INSTANCEID":  "i-0326e7f4afeca98b6" } ,
+    { "EANVHOSTTYPE":  "ami"} ,
+    { "INSTANCETYPE" :  "t3.micro"} ,
+    { "INSTANCEPROFILEARN" :  "arn:aws:iam::635054736638:instance-profile/ami-nodejs-mysql-instance-profile" }
+    ]
+}
+

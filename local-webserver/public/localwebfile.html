@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Title</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+</head>
+
+<body>
+  <header class="section">
+
+    <div id="headerMessage" />
+    <nav class="site-nav"></nav>
+
+  </header>
+
+  <div id="apps-container">
+    <button id="getAppsBtn">Check</button>
+  </div>
+
+  <div id="responseDiv">
+    
+  </div>
+
+  <div id="responseEc2Div">
+    
+  </div>
+
+  
+</body>
+
+</html>
+
+<script>
+    
+ EP = "http://localhost:8080/"
+  // = "https://ami.apps.dliv.com"
+
+    const checkIncoming = () => {
+        const host = window.location.host;
+        const pathname = window.location.pathname;
+        const search = window.location.search;
+        const hash = window.location.hash;
+   
+        console.log("host", host)
+        console.log("path", pathname )
+        console.log("search", search)
+        console.log("hash", hash)
+
+        
+        const urlParams = new URLSearchParams(search);
+        // const authCode = urlParams.get('code') ; 
+                
+    }
+
+    window.onload = checkIncoming  ; 
+
+    const fetchIt =  async () => {
+      const response = await fetch(EP) ; 
+      console.log("Response: " + response)
+      data = await response.json() ; 
+      console.log(data)
+      result = data.test
+      responseDiv.innerHTML = "/ is: " + result
+      const responseEc2 = await fetch(EP + "ec2") ; 
+      console.log("Response: " + responseEc2)
+      dataEc2 = await responseEc2.json() ; 
+      const ec2Details = dataEc2.ec2Details
+      console.log(ec2Details) ;
+      let htmlArr = ["Ec2Details"] ; 
+      ec2Details.map(item => {
+        let itemKey = Object.keys(item)[0]; 
+        let itemValue = item[itemKey] ; 
+        htmlArr.push("<div>" + itemKey + ": " + itemValue + "</div>") ; 
+
+      })
+      responseEc2Div.innerHTML = htmlArr.join("") ; 
+    }
+
+    const appsBtnElement = document.getElementById("getAppsBtn");
+    appsBtnElement.addEventListener("click",fetchIt);
+    const responseDiv = document.getElementById("responseDiv");
+    const responseEc2Div = document.getElementById("responseEc2Div") ; 
+
+</script>

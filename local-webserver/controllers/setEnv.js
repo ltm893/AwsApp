@@ -8,19 +8,29 @@ const jsFileMaker = require("../service/cogDetails");
 
 module.exports = {
     setEnv: (req, res) => {
+       console.log("setEnvCalled")
         const testEnv = req.params.envId
         jsFileMaker.makeCogJsFile(testEnv).then((result) => {
             console.log(result) ; 
             if(result) {
-            // res.send('{"success" : "File Made Successfully", "status" : 200}');
+              //  res.send('{"success" : "File Made Successfully", "status" : 200}');
+             
                 res.redirect('/cogTest');
+               // res.sendFile(cogTestHtml) ;
             }
             else {
                 res.end("oops " + result) ;
             }
           }) 
     },
-    cogTest: (req, res) => {
+    cogTest: async (req, res) => {
+        res.sendFile(cogTestHtml) ;
+    },
+    cogAuthCode: (req, res) => {
+        res.sendFile(cogTestHtml) ;
+    },
+    cogAuthTest: (req, res) => {
         res.sendFile(cogTestHtml) ;
     }
+
 }

@@ -89,9 +89,12 @@ Resources:
         TagSpecifications:
           - ResourceType: instance
             Tags:
-            - Key: ENVHOST
+            - Key: ENVHOSTTYPE
               Value: !Sub ${EnvironmentName}
-        UserData: IyEvYmluL2Jhc2gKL2hvbWUvZWMyLXVzZXIvc2NyaXB0cy9zdGFydEFwcAo=
+        UserData: |
+          IyEvYmluL2Jhc2gKL2hvbWUvZWMyLXVzZXIvc2NyaXB0cy9zdGFydEFwcAovaG9tZS9lYzItdXNl
+          ci9zY3JpcHRzL2dldE1ldGFEYXRhLnNoID4gL2hvbWUvZWMyLXVzZXIvYXBwL2Jpa2VzL3NpbXBs
+          ZUFwcC9wdWJsaWMvZWMyZGV0YWlscw==
 
   BikesHttpApi:
     Type: AWS::ApiGatewayV2::Api
@@ -218,6 +221,8 @@ Resources:
         - https://apps.dliv.com
         - http://localhost:3000
         - https://www.dliv.com
+        - http://localhost:3000/cogAuthCode
+        - http://localhost:3000/cogTest
       ClientName: !Sub ${EnvironmentName}-bikes-apigateway
       DefaultRedirectURI: http://localhost:3000
       SupportedIdentityProviders:
