@@ -11,6 +11,9 @@ const selectEnvEventHandler = async (event) => {
     else if (envType === 'dev') {
         redirectString += 'dev'
     }
+    else if (envType === 'local') {
+        redirectString += 'local'
+    }
     else if (envType === 'prod') {     
         redirectString += 'prod'
     }

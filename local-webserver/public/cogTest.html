@@ -6,24 +6,32 @@
   <meta charset="utf-8">
   <title>Title</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <script src="client.js"></script>
+  <script src="clientEnv.js" defer></script>
+  <script src="client.js" defer></script>
+  <style>
+    #responseDiv, #responseEc2Div {
+      padding: .5em;
+      margin: .5em;
+    }
+  </style>
+
+
 </head>
 
 <body>
- 
+  <header class="section">
+    <div id="messageDiv" />
+   
+  </header>
 
-  <div id="messageDiv"></div>
+  <div id="apps-container">
+    <button id="pickEnvBtn">Pick Env</button>
+    <button id="checkBaseBtn">Check /</button>
+    <button id="checkEc2Btn">Check /ec2</button>
+  </div>
 
-  <div id="iframeArea">
-    <iframe id="displayCogApi" height="90%" width="95%" title="description"></iframe>
-</div>
-
-
-  
-
+  <div id="responseDiv"></div>
+  <div id="responseEc2Div"></div>
 </body>
 
 </html>
-
-
-

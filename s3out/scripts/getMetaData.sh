@@ -7,6 +7,6 @@ ENVHOSTTYPE=`aws ec2 describe-tags --filters "Name=key,Values=ENVHOSTTYPE" | jq 
 INSTANCETYPE=`curl -H "X-aws-ec2-metadata-token: $TOKEN" -v http://169.254.169.254/latest/meta-data/instance-type`
 INSTANCEPROFILEARN=`curl -H "X-aws-ec2-metadata-token: $TOKEN" -v http://169.254.169.254/latest/meta-data/iam/info | jq -r '.InstanceProfileArn'`
 echo 'INSTANCEID: ' $INSTANCEID
-echo 'EANVHOSTTYPE: '  $ENVHOSTTYPE
+echo 'ENVHOSTTYPE: '  $ENVHOSTTYPE
 echo 'INSTANCETYPE: ' $INSTANCETYPE
 echo 'INSTANCEPROFILEARN: ' $INSTANCEPROFILEARN

@@ -7,28 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 </head>
 
-<body>
-  <header class="section">
 
-    <div id="headerMessage" />
-    <nav class="site-nav"></nav>
-
-  </header>
-
-  <div id="apps-container">
-    <button id="getAppsBtn">Check</button>
-  </div>
-
-  <div id="responseDiv">
-    
-  </div>
-
-  <div id="responseEc2Div">
-    
-  </div>
-
-  
-</body>
 
 </html>
 
@@ -56,30 +35,38 @@
 
     window.onload = checkIncoming  ; 
 
-    const fetchIt =  async () => {
-      const response = await fetch(EP) ; 
-      console.log("Response: " + response)
-      data = await response.json() ; 
-      console.log(data)
-      result = data.test
-      responseDiv.innerHTML = "/ is: " + result
-      const responseEc2 = await fetch(EP + "ec2") ; 
-      console.log("Response: " + responseEc2)
-      dataEc2 = await responseEc2.json() ; 
-      const ec2Details = dataEc2.ec2Details
-      console.log(ec2Details) ;
-      let htmlArr = ["Ec2Details"] ; 
-      ec2Details.map(item => {
-        let itemKey = Object.keys(item)[0]; 
-        let itemValue = item[itemKey] ; 
-        htmlArr.push("<div>" + itemKey + ": " + itemValue + "</div>") ; 
-
-      })
-      responseEc2Div.innerHTML = htmlArr.join("") ; 
+    const fetchIt =  async (fetchRoute) => {
+      if(fetchRoute == 'base') {
+        const response = await fetch(EP) ; 
+        data = await response.json() ; 
+        result = data.test
+        responseDiv.innerHTML = "/ is: " + result ; 
+      }
+      if(fetchRoute == 'ec2') {
+        const responseEc2 = await fetch(EP + "ec2") ; 
+        dataEc2 = await responseEc2.json() ; 
+        const ec2Details = dataEc2.ec2Details
+        const htmlArray = ec2Details.map(item => {
+          let itemKey = Object.keys(item)[0]; 
+          let itemValue = item[itemKey] ; 
+          return ("<div>" + itemKey + ": " + itemValue + "</div>") ; 
+        })
+        htmlArray.unshift('ec2Details')
+        responseEc2Div.innerHTML = htmlArray.join("") ;
+      } 
     }
 
-    const appsBtnElement = document.getElementById("getAppsBtn");
-    appsBtnElement.addEventListener("click",fetchIt);
+    const checkBaseBtn = document.getElementById("checkBaseBtn");
+    checkBaseBtn.addEventListener("click", function() {
+      fetchIt('base') ;
+    });
+
+
+    const checkEc2Btn = document.getElementById("checkEc2Btn");
+    checkEc2Btn.addEventListener("click", function() {
+      fetchIt('ec2') ;
+    });
+
     const responseDiv = document.getElementById("responseDiv");
     const responseEc2Div = document.getElementById("responseEc2Div") ; 
 

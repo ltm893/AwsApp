@@ -18,3 +18,43 @@ let dataArray = data.ec2Details
             console.log('something went wrong', err);
         });
     }
+
+
+
+
+    const getDlivApps = () => {
+      console.log("Fetching Dliv")
+      console.log(token)
+      console.log(tokenType)
+      fetch( 'https://ami.apps.dliv.com'  , { 
+          headers: {
+              'Authorization': tokenType + ' ' + token,
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'access-control-request-method': 'POST',
+              'access-control-request-headers': 'X-Requested-With'
+          }
+         
+      }).then(function (resp) {
+          // Return the API response as JSON
+          console.log(resp)
+          return resp.json();
+      }).then(function (data) {
+          // Log the pet data
+          console.log('from apps', data);
+          document.getElementById('displayCogApi').contentWindow.document.body.innerHTML = data.title ; 
+      }).catch(function (err) {
+         console.log('something went wrong callinbg apps ', err);
+      });
+
+  }
+
+  const makeCall = function () {
+      // If current token is invalid, get a new one
+      if (!expires || expires - new Date().getTime() < 1) {
+          console.log('new call');
+          redirectForAuthCode() ; 
+      }
+      // Otherwise, get pets
+      console.log('from cache');
+      getDlivApps()
+  }

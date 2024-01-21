@@ -13,10 +13,7 @@ module.exports = {
         jsFileMaker.makeCogJsFile(testEnv).then((result) => {
             console.log(result) ; 
             if(result) {
-              //  res.send('{"success" : "File Made Successfully", "status" : 200}');
-             
                 res.redirect('/cogTest');
-               // res.sendFile(cogTestHtml) ;
             }
             else {
                 res.end("oops " + result) ;
@@ -25,12 +22,17 @@ module.exports = {
     },
     cogTest: async (req, res) => {
         res.sendFile(cogTestHtml) ;
-    },
+    }
+}
+
+
+/*
+
+,
     cogAuthCode: (req, res) => {
         res.sendFile(cogTestHtml) ;
     },
     cogAuthTest: (req, res) => {
         res.sendFile(cogTestHtml) ;
     }
-
-}
+*/
