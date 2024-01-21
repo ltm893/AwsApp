@@ -22,7 +22,7 @@
 * Login to EC2 with Session Manager and load test data as ec2-user ~/scripts/loadImport.sh
 
 ## Testing
-* Connito with local node webserver
+* Cognito with local node webserver
    * cd local-webserver/
    * npm start
    * Makes call to APIs built with cloudformation templates 
