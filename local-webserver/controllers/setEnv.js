@@ -26,13 +26,3 @@ module.exports = {
 }
 
 
-/*
-
-,
-    cogAuthCode: (req, res) => {
-        res.sendFile(cogTestHtml) ;
-    },
-    cogAuthTest: (req, res) => {
-        res.sendFile(cogTestHtml) ;
-    }
-*/

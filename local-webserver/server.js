@@ -1,22 +1,3 @@
-/*
-let webFile ; 
-const startType = process.argv[2] ;
-console.log(startType)
-
-if(startType == 'aws') {
-  
-  webFile = 'awswebfile.html'
-}
-else if(startType == 'local') {
-  webFile = 'localwebfile.html'
-}
-else {
-  console.log(webFile)
-  console.log(startType)
-  console.log("EndPoint argument required: aws or local")
-  process.exit(1)
-}
-*/
 const path = require('path');
 const express = require("express");
 const bodyParser = require('body-parser') ;
