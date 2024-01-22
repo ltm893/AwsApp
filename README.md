@@ -21,5 +21,14 @@
 * Test data is at s3://ltm893-mysql-bike-loads/load-bikes.sql
 * Login to EC2 with Session Manager and load test data as ec2-user ~/scripts/loadImport.sh
 
+## Testing
+* Cognito with local node webserver
+   * cd local-webserver/
+   * npm start
+   * Makes call to APIs built with cloudformation templates 
+   * To test locally cd ~/simpleApp
+   * npm run local 
+
+
 
 
