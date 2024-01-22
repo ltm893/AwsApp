@@ -199,12 +199,14 @@ Resources:
                   inputs:
                     commands:
                       - /bin/su -c  "sudo systemctl start simpleApp.service" - ec2-user
-                                      - name: StatusSimpleApp
+
+                - name: StatusSimpleApp
                   action: ExecuteBash
                   onFailure: Abort
                   inputs:
                     commands:
                       - /bin/su -c  "sudo systemctl status simpleApp.service" - ec2-user
+
                           
             - name: test
               steps:
@@ -255,7 +257,7 @@ Resources:
                   onFailure: Abort
                   inputs:
                     commands:
-                      - ls -ltr  /home/ec2-user/apps/bikes/simpleApp/ec2Details
+                      - ls -ltr  /home/ec2-user/apps/bikes/simpleApp/public/ec2details.txt
 
   InstallNodejsApiComponent:
     Type: AWS::ImageBuilder::Component

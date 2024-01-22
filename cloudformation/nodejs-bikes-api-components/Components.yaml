@@ -94,7 +94,8 @@ Resources:
         UserData: |
           IyEvYmluL2Jhc2gKL2hvbWUvZWMyLXVzZXIvc2NyaXB0cy9zdGFydEFwcAovaG9tZS9lYzItdXNl
           ci9zY3JpcHRzL2dldE1ldGFEYXRhLnNoID4gL2hvbWUvZWMyLXVzZXIvYXBwL2Jpa2VzL3NpbXBs
-          ZUFwcC9wdWJsaWMvZWMyZGV0YWlscw==
+          ZUFwcC9wdWJsaWMvZWMyZGV0YWlscy50eHQ=
+          
 
   BikesHttpApi:
     Type: AWS::ApiGatewayV2::Api
