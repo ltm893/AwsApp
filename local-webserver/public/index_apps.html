@@ -89,7 +89,7 @@
                 token = data.access_token;
                 tokenType = data.token_type;
                 expires = new Date().getTime() + (data.expires_in * 1000);
-                console.log(token); 
+                console.log(token);  
                 const str = 'https://apps.dliv.com' ; 
                 const url = new URL(str);
                 const request = new Request(url, {

@@ -58,3 +58,10 @@ let dataArray = data.ec2Details
       console.log('from cache');
       getDlivApps()
   }
+
+
+          "Condition" : {
+	        "ForAnyValue":"StringNotLike" : {
+	"aws:PrincipleArn": "arn:aws:iam::635054736638:role/role101"
+	        }
+},

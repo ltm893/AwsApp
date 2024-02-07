@@ -44,7 +44,7 @@
       }
       if(fetchRoute == 'ec2') {
         const responseEc2 = await fetch(EP + "ec2") ; 
-        dataEc2 = await responseEc2.json() ; 
+        dataEc2 = await responseEc2.text() ; 
         const ec2Details = dataEc2.ec2Details
         const htmlArray = ec2Details.map(item => {
           let itemKey = Object.keys(item)[0]; 

@@ -92,9 +92,9 @@ Resources:
             - Key: ENVHOSTTYPE
               Value: !Sub ${EnvironmentName}
         UserData: |
-          IyEvYmluL2Jhc2gKL2hvbWUvZWMyLXVzZXIvc2NyaXB0cy9zdGFydEFwcAovaG9tZS9lYzItdXNl
-          ci9zY3JpcHRzL2dldE1ldGFEYXRhLnNoID4gL2hvbWUvZWMyLXVzZXIvYXBwL2Jpa2VzL3NpbXBs
-          ZUFwcC9wdWJsaWMvZWMyZGV0YWlscy50eHQ=
+            IyEvYmluL2Jhc2gKL2hvbWUvZWMyLXVzZXIvc2NyaXB0cy9zdGFydEFwcAovaG9tZS9lYzItdXNl
+            ci9zY3JpcHRzL2dldE1ldGFEYXRhLnNoID4gL2hvbWUvZWMyLXVzZXIvYXBwcy9iaWtlcy9zaW1w
+            bGVBcHAvcHVibGljL2VjMmRldGFpbHMudHh0
           
 
   BikesHttpApi:

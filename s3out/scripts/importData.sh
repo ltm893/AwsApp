@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eo pipefail
 echo 'Getting RDS Hostname'
-HOSTENV=`aws ec2 describe-tags | jq -r '.Tags | map(select(.Key =="ENVHOST" and  .ResourceType=="instance"))[0] | .Value '`
+HOSTENV=`aws ec2 describe-tags | jq -r '.Tags | map(select(.Key =="ENVHOSTTYPE" and  .ResourceType=="instance"))[0] | .Value '`
 echo 'Downloading from s3'
 aws s3 cp s3://ltm893-mysql-bike-loads/load-bikes.sql /input
 SECRETID=`aws ssm get-parameter --name /rds/$HOSTENV/bikestore/secretarn --region us-east-2 | jq -r ."Parameter.Value"`

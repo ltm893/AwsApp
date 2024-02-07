@@ -84,15 +84,13 @@ let cognitoToken, cognitoTokenType;
     if (route == 'ec2') {
       try {
         const responseEc2 = await fetch(request);
-        dataEc2 = await responseEc2.json();
-        const ec2Details = dataEc2.ec2Details
-        const htmlArray = ec2Details.map(item => {
-          let itemKey = Object.keys(item)[0];
-          let itemValue = item[itemKey];
-          return ("<div>" + itemKey + ": " + itemValue + "</div>");
-        })
-        htmlArray.unshift('ec2Details')
-        responseEc2Div.innerHTML = htmlArray.join("");
+        dataEc2 = await responseEc2.text();
+        const textArray = dataEc2.split("\n")
+        const html_array = textArray.map((t) => {
+          return  '<div>' + t + '</div>'
+        });
+        html_array.unshift('<div>ec2Details</div>')
+        responseEc2Div.innerHTML = html_array.join("")
       }
       catch(err) {
         console.log(err)
