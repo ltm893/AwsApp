@@ -2,3 +2,5 @@
 **/config/
 **/*.env
 *Zone.Identifier*
+local-webserver/public/clientEnv.js
+modified:   s3out/opt/simpleApp.zip

@@ -1,7 +1,10 @@
 #!/bin/bash
 set -eo pipefail
 echo 'Getting RDS Hostname'
-HOSTENV=`aws ec2 describe-tags | jq -r '.Tags | map(select(.Key =="ENVHOSTTYPE" and  .ResourceType=="instance"))[0] | .Value '`
+
+TOKEN=`curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"`
+INSTANCEID=`curl -H "X-aws-ec2-metadata-token: $TOKEN" -v http://169.254.169.254/latest/meta-data/instance-id`
+HOSTENV=`aws ec2 describe-tags | jq -r --arg jq_iid $INSTANCEID '.Tags | map(select(.Key =="ENVHOSTTYPE" and  .ResourceId==$jq_iid)) |.[] | .Value '`
 echo 'Downloading from s3'
 aws s3 cp s3://ltm893-mysql-bike-loads/load-bikes.sql /input
 SECRETID=`aws ssm get-parameter --name /rds/$HOSTENV/bikestore/secretarn --region us-east-2 | jq -r ."Parameter.Value"`
